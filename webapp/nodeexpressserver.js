@@ -20,6 +20,8 @@ app.get('/',function(req,res){
 app.post('/builds',jsonParser, function(req,res){
    builds = req.body.jobs.Build_base_AMI.Builds;      // your JSON
     // sort 
+   //builds = req.body.jobs
+   console.log(builds)
    sorted = builds.sort(compare);
    function compare(a, b) {
         const aTime = parseInt(a.build_date);
@@ -54,6 +56,13 @@ app.post('/builds',jsonParser, function(req,res){
     } 
     
    res.send(data); 
+});
+app.post('/buildsnew',jsonParser, function(req,res){
+   //builds = req.body.jobs.Build_base_AMI.Builds;      // your JSON
+    // sort 
+   builds = req.body
+   console.log(builds)
+   res.send(builds); 
 });
 app.listen(8000,function(){
   console.log("Started on PORT 8000");

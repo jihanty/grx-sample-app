@@ -14,3 +14,7 @@ variable "public_subnet_1_cidr" {
 variable "private_subnet_1_cidr" {
   description = "pubilc subnet 1 cidr"
 }
+
+variable "allowed_ssh_ip" {
+  description = "provide public ip of your computer . You can type \"what is my ip\" on google to find that out"
+}
