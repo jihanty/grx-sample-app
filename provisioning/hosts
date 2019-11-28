@@ -1,0 +1,2 @@
+[default]
+webapp1 ansible_host=54.202.14.140

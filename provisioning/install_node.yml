@@ -1,0 +1,22 @@
+---
+- name: Install curl and wget
+  gather_facts: 'yes'
+  hosts: webapp1
+  become: yes
+  remote_user: ec2-user
+  
+
+  tasks:
+    
+    - debug:
+        msg: ansible_ssh_user = {{ ansible_ssh_user }}
+    - name: "install npm"
+      shell: >
+        /bin/bash -c "source mkdir /home/ec2-user/.nvm"
+        chown ec2-user.ec2-user /home/ec2-user/.nvm
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
+    - name: "run app.sh"
+      shell: >
+        /bin/bash -c "source /home/{{ ansible_ssh_user }}/app.sh"
+
+    
