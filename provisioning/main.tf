@@ -109,14 +109,18 @@ data "aws_ami" "centos" {
 
 resource "aws_key_pair" "deployer" {
   key_name   = "deployer-key"
-  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDAzHWaZrXvJgeY/qKY64sJ2zwrGNvzFPmWtbkf8VKuaZiqNxo+1GFUbYtbYzeXyT1kdX2VDC3lqtomouneBlAPEKAmku1YwAOVNtNjiCfAcZGHbVbJKfKv8DxKl2/Qo89LQ/LHG9dVZYP3GNInNbhG0aNgvJaqpsnrMfUPEawqLOHg8nD7SKR9dBSTe091AxppXKmpjjXj214CIxqLUcDU5FFA5u1hA7ptJcBdmVI0FZvZ4qD823tI4/W8q23kOOXk7XnRzCliS6xquifz2qMAM3jPzIRrS4T77Bil4juVQjxXqia6s6Vex2zputj2g/VxL8Oz0MDG+eZOlIsY2A1l abhijeetmohanty@Abhijeets-MBP"
+  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDIsAetGlx3zB+UbXxu4zjsvzwXVwiXTP0qShyhKTmledi9ejkCA0f+HFdU0CgNdh5ni32Vlbq16pHLJpkEyMmoWoUhT1cWqsMfkRzDSvriGEaDhxljv8TAe9OBzl+p7KCdCVRhWtxKRssa4yGdKqao4EO3dGz/YqFDhbD4u0dgT+oYnfzEJe8lk2ltRmwY75aRrxOycxuVvOu2whjLnZTQs5W3dbBPsu7lhmhExMKJuABadvDYH/S75xD3s+YBYrG+RbRM4mhYcln1MOifSQGSBMoRtamiuPgdJQxK9SZELZywgodK4xL86hwSYBlqE0sYxlrd9vrFyiE4l+uv7n71"
 }
 resource "aws_instance" "my-test-instance" {
-  ami             = "ami-22b9a343"
+  ami             = "ami-0c5204531f799e0c6"
   instance_type   = "t2.micro"
   subnet_id = "${aws_subnet.public-subnet-1.id}"
-  key_name = "${aws_key_pair.deployer.key_name}"
+  key_name = "deployer-key"
+  security_groups = ["${aws_security_group.allow_http.id}"]
 
+  user_data = "${file("app_install.sh")}"
+
+  depends_on = ["aws_security_group.allow_http","aws_subnet.public-subnet-1"]
 }
 resource "aws_security_group" "elb" {
   name        = "elb_sg"
@@ -148,7 +152,7 @@ resource "aws_elb" "web" {
   name = "my-elb"
 
   # The same availability zone as our instance
-  subnets = ["${aws_subnet.private-subnet-1.id}"]
+  subnets = ["${aws_subnet.public-subnet-1.id}"]
 
   security_groups = ["${aws_security_group.elb.id}"]
 
@@ -163,17 +167,24 @@ resource "aws_elb" "web" {
     healthy_threshold   = 2
     unhealthy_threshold = 2
     timeout             = 3
-    target              = "HTTP:80/"
+    target              = "HTTP:8000/"
     interval            = 30
   }
 
   # The instance is registered automatically
 
   instances                   = ["${aws_instance.my-test-instance.id}"]
-  cross_zone_load_balancing   = true
+  cross_zone_load_balancing   = false
   idle_timeout                = 400
   connection_draining         = true
   connection_draining_timeout = 400
+
+  depends_on = ["aws_instance.my-test-instance", "aws_security_group.elb"]
+}
+
+resource "aws_elb_attachment" "attach" {
+  elb      = "${aws_elb.web.id}"
+  instance = "${aws_instance.my-test-instance.id}"
 }
 
 
@@ -188,9 +199,10 @@ resource "aws_security_group" "allow_http" {
     protocol    = "tcp"
     # Please restrict your ingress to only necessary IPs and ports.
     # Opening to 0.0.0.0/0 can lead to security vulnerabilities.
-    cidr_blocks = ["${aws_subnet.public-subnet-1.cidr_block}"]
+    #cidr_blocks = ["${aws_subnet.public-subnet-1.cidr_block}"]
+    cidr_blocks = ["0.0.0.0/0"]
 
-}
+  }
 
   egress {
     from_port       = 0
@@ -198,7 +210,16 @@ resource "aws_security_group" "allow_http" {
     protocol        = "-1"
     cidr_blocks     = ["0.0.0.0/0"]
   }
+
+  ingress {
+    from_port = 22
+    protocol = "tcp"
+    to_port = 22
+    #cidr_blocks = ["104.172.166.11/32"]
+    cidr_blocks = ["${var.allowed_ssh_ip}/32"]
+  }
 }
+
 
 
 
