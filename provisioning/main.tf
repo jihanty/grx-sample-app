@@ -224,6 +224,11 @@ output "elb_dns_name" {
   value = aws_elb.web.dns_name
 }
 
+output "ec2-public-ip-for-ssh" {
+  value = aws_instance.my-test-instance.public_ip
+}
+
+
 
 
 

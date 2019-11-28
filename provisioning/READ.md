@@ -50,6 +50,11 @@ curl -X POST http://<<elb_dns_name>>/builds --data  @data.txt -H "Content-Type: 
 
     terraform destroy  -var-file=production.tfvars --auto-approve 
 
+9. To get the ssh key to access the instance and I am attaching the same here as grx-assignment-key-jihanty.zip.   Please download and unzip the file and use it to access the ssh into the EC2 instance .  IP for ssh should be there at step 6 as variable ec2-public-ip-for-ssh       
+      
+    unzip grx-assignment-key-jihanty.zip       
+    ssh -i  test-grx.pem ec2-user@<<ec2-public-ip-for-ssh>>
+
 
 
 
